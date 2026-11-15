@@ -3,7 +3,7 @@ import { Link, useRouter } from '../router';
 import { useStore } from '../store';
 import { api } from '../api';
 import { TIME_SLOTS } from '../catalog';
-import { CartSummary, ErrorBox, Stars } from '../components/ui';
+import { CartSummary, ErrorBox } from '../components/ui';
 
 const pad = (n) => String(n).padStart(2, '0');
 const isoDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -106,7 +106,8 @@ export default function Checkout() {
       try {
         const b = await api.createBooking({
           customerName: customer.name,
-          address: `${customer.address}, ${city}`,
+          address: customer.address,
+          city,
           scheduledAt: `${date}T${slot}:00`,
           categoryId,
           providerId: providerChoice[categoryId] ? Number(providerChoice[categoryId]) : null,
@@ -179,12 +180,10 @@ export default function Checkout() {
             return (
               <Field key={id} label={cat.name}>
                 <select value={providerChoice[id] || ''} onChange={(e) => setProviderChoice((p) => ({ ...p, [id]: e.target.value }))}>
-                  <option value="">Auto-assign top-rated professional</option>
-                  {(list || []).map((p) => <option key={p.id} value={p.id}>{p.name} — ★ {p.rating.toFixed(1)}</option>)}
+                  <option value="">Any available professional (recommended)</option>
+                  {(list || []).map((p) => <option key={p.id} value={p.id}>Prefer {p.name} — ★ {p.rating.toFixed(1)}</option>)}
                 </select>
-                {list && list.length > 0 && (
-                  <div className="hint">Top in {city}: {list[0].name} <Stars value={list[0].rating} /></div>
-                )}
+                <div className="hint">We assign a top-rated professional who is free at your time slot{providerChoice[id] ? ', trying your preferred one first' : ''}.</div>
               </Field>
             );
           })}
