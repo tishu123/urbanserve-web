@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useQuery } from '../router';
 import { api } from '../api';
 import { useStore } from '../store';
-import { ErrorBox, Icon, Loading, Stars, StatusPill } from '../components/ui';
+import { ErrorBox, Icon, Loading, Stars, StatusPill, maskPhone } from '../components/ui';
 
 const fmtWhen = (iso) =>
   new Date(iso).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
@@ -71,7 +71,7 @@ export function MyBookings() {
   return (
     <div className="container section narrow">
       <h1>My bookings</h1>
-      <p className="muted">Bookings for +91 {user.phone}</p>
+      <p className="muted">Bookings for +91 {maskPhone(user.phone)}</p>
       {error && <ErrorBox message={error} />}
       {loading && <Loading />}
       {list && !loading && (list.length === 0
