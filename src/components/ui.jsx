@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useRouter } from '../router';
 import { useStore } from '../store';
 import { CITIES, formatINR, slugify } from '../catalog';
@@ -19,7 +19,15 @@ const PATHS = {
   shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
   users: 'M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
   chev: 'M6 9l6 6 6-6',
+  chevr: 'M9 6l6 6-6 6',
+  user: 'M20 21v-1a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v1M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  logout: 'M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11',
+  calendar: 'M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z',
 };
+
+/** 9876543210 -> "98******10" (middle six digits hidden). */
+export const maskPhone = (phone = '') =>
+  phone.length === 10 ? `${phone.slice(0, 2)}******${phone.slice(-2)}` : phone;
 
 export function Icon({ name, size = 20, className = '', filled = false }) {
   return (
@@ -41,7 +49,7 @@ export function Stars({ value }) {
 
 /* ---------- Layout ---------- */
 export function Header() {
-  const { city, setCity, itemCount, categories, user, logout } = useStore();
+  const { city, setCity, itemCount, categories, user } = useStore();
   const { pathname } = useRouter();
   const [open, setOpen] = useState(false);
   return (
@@ -65,9 +73,10 @@ export function Header() {
             return <Link key={c.id} to={to} className={pathname === to ? 'active' : ''}>{c.name}</Link>;
           })}
           <Link to="/bookings" className={pathname === '/bookings' ? 'active' : ''}>My bookings</Link>
-          {user && <Link to="/profile" className={pathname === '/profile' ? 'active' : ''} title={`Logged in as +91 ${user.phone}`}>Profile</Link>}
           {user
-            ? <button className="nav-btn" onClick={logout}>Log out</button>
+            ? <Link to="/profile" className={`nav-account ${pathname === '/profile' ? 'active' : ''}`} aria-label="Account">
+                <Icon name="user" size={18} /> Account
+              </Link>
             : <Link to={`/login?next=${encodeURIComponent(pathname)}`} className={pathname === '/login' ? 'active' : ''}>Log in</Link>}
         </nav>
 
@@ -100,7 +109,7 @@ export function Footer() {
         </div>
         <div>
           <h4>Account</h4>
-          <Link to="/profile">Profile</Link>
+          <Link to="/profile">Account</Link>
           <Link to="/bookings">My bookings</Link>
           <Link to="/checkout">Cart</Link>
         </div>
@@ -178,6 +187,33 @@ export function CartSummary({ ctaLabel = 'Proceed to book', onCta, hideCta = fal
 
 export function Loading({ label = 'Loading…' }) {
   return <div className="loading"><span className="spinner" /> {label}</div>;
+}
+
+/** Accessible confirmation dialog (Esc / backdrop = cancel, focus starts on Cancel). */
+export function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false, busy = false, onConfirm, onCancel }) {
+  const cancelRef = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    cancelRef.current?.focus();
+    const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prevOverflow; };
+  }, [open]);
+  if (!open) return null;
+  return (
+    <div className="dialog-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
+      <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby="dlg-msg">
+        <h2 id="dlg-title">{title}</h2>
+        <p id="dlg-msg" className="muted">{message}</p>
+        <div className="dialog-actions">
+          <button ref={cancelRef} className="btn btn-ghost" onClick={onCancel} disabled={busy}>{cancelLabel}</button>
+          <button className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`} onClick={onConfirm} disabled={busy}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ErrorBox({ message }) {
