@@ -18,22 +18,29 @@ export const session = {
   subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
 };
 
-async function request(path, options = {}) {
+async function request(path, options = {}, staleTokenRetry = false) {
+  // Remember which token this request carried: parallel requests can clear the session meanwhile.
+  const token = staleTokenRetry ? null : auth?.token;
   let res;
   try {
     res = await fetch(BASE + path, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...(auth ? { Authorization: `Bearer ${auth.token}` } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(options.headers || {}),
       },
     });
   } catch {
     throw new Error('Could not reach the UrbanServe server. Is the backend running on port 8080?');
   }
-  if (res.status === 401 && auth && !path.startsWith('/api/auth/')) {
-    session.set(null); // expired or revoked token
+  if (res.status === 401 && token && !path.startsWith('/api/auth/otp/')) {
+    // The saved login is expired or no longer accepted (e.g. the server's signing key changed).
+    // Drop it and retry once without it: public endpoints (catalog, providers) then just work.
+    if (auth?.token === token) session.set(null);
+    return request(path, options, true);
+  }
+  if (res.status === 401 && staleTokenRetry) {
     const err = new Error('Your session has expired. Please log in again.');
     err.status = 401;
     throw err;
