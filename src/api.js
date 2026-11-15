@@ -55,6 +55,8 @@ async function request(path, options = {}) {
 export const api = {
   requestOtp: (phone) => request('/api/auth/otp/request', { method: 'POST', body: JSON.stringify({ phone }) }),
   verifyOtp: (phone, code) => request('/api/auth/otp/verify', { method: 'POST', body: JSON.stringify({ phone, code }) }),
+  /** Server-side confirmation of the logged-in, OTP-verified phone number. */
+  me: () => request('/api/auth/me'),
 
   categories: () => request('/api/categories'),
 

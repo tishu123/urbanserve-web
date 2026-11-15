@@ -65,8 +65,9 @@ export function Header() {
             return <Link key={c.id} to={to} className={pathname === to ? 'active' : ''}>{c.name}</Link>;
           })}
           <Link to="/bookings" className={pathname === '/bookings' ? 'active' : ''}>My bookings</Link>
+          {user && <Link to="/profile" className={pathname === '/profile' ? 'active' : ''} title={`Logged in as +91 ${user.phone}`}>Profile</Link>}
           {user
-            ? <button className="nav-btn" onClick={logout} title={`Logged in as +91 ${user.phone}`}>Log out</button>
+            ? <button className="nav-btn" onClick={logout}>Log out</button>
             : <Link to={`/login?next=${encodeURIComponent(pathname)}`} className={pathname === '/login' ? 'active' : ''}>Log in</Link>}
         </nav>
 
@@ -99,6 +100,7 @@ export function Footer() {
         </div>
         <div>
           <h4>Account</h4>
+          <Link to="/profile">Profile</Link>
           <Link to="/bookings">My bookings</Link>
           <Link to="/checkout">Cart</Link>
         </div>
