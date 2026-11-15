@@ -5,7 +5,8 @@ import { api } from '../api';
 import { ErrorBox, Icon } from '../components/ui';
 
 // Only allow redirects to paths inside this app (prevents open redirects via ?next=).
-const safeNext = (n) => (n && n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/login') ? n : '/');
+// After OTP verification the user lands on their profile unless they came from a specific page.
+const safeNext = (n) => (n && n !== '/' && n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/login') ? n : '/profile');
 
 export default function Login() {
   const { user, login } = useStore();

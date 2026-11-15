@@ -9,6 +9,7 @@ import Checkout from './pages/Checkout';
 import { MyBookings, BookingSuccess } from './pages/Bookings';
 import NotFound from './pages/NotFound';
 import Login from './pages/Login';
+import Profile from './pages/Profile';
 import './styles.css';
 
 function Routes() {
@@ -20,6 +21,7 @@ function Routes() {
   if (pathname === '/bookings') return <MyBookings />;
   if (pathname === '/booking-success') return <BookingSuccess />;
   if (pathname === '/login') return <Login />;
+  if (pathname === '/profile') return <Profile />;
   return <NotFound />;
 }
 
