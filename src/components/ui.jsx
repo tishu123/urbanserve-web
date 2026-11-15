@@ -225,7 +225,7 @@ export function ErrorBox({ message }) {
 }
 
 export const STATUS_LABEL = {
-  PENDING: 'Pending', CONFIRMED: 'Confirmed', IN_PROGRESS: 'In progress',
+  PENDING: 'Finding professional', CONFIRMED: 'Confirmed', IN_PROGRESS: 'In progress',
   COMPLETED: 'Completed', CANCELLED: 'Cancelled',
 };
 
