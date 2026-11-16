@@ -81,6 +81,15 @@ export const api = {
 
   booking: (id) => request(`/api/bookings/${id}`),
 
+  prepareOnlinePayment: (id) =>
+    request(`/api/bookings/${id}/payment/online`, { method: 'POST' }),
+
+  verifyOnlinePayment: (id, razorpayPaymentId, razorpaySignature) =>
+    request(`/api/bookings/${id}/payment/online/verify`, {
+      method: 'POST',
+      body: JSON.stringify({ razorpayPaymentId, razorpaySignature }),
+    }),
+
   myBookings: () => request('/api/bookings'),
 
   updateStatus: (id, status) =>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useQuery } from '../router';
 import { api } from '../api';
 import { useStore } from '../store';
+import PayOnline from '../components/PayOnline';
 import { ConfirmDialog, ErrorBox, Icon, Loading, Stars, StatusPill, maskPhone } from '../components/ui';
 
 const fmtWhen = (iso) =>
@@ -28,6 +29,7 @@ function usePollWhilePending(list, refetch) {
 }
 
 function BookingCard({ b, onCancel, busy }) {
+  const { user } = useStore();
   const pro = b.assignedProvider;
   const noPro = b.status === 'CANCELLED' && b.statusReason;
   return (
@@ -68,6 +70,7 @@ function BookingCard({ b, onCancel, busy }) {
         <div><Icon name="clock" size={16} /> {fmtWhen(b.scheduledAt)}</div>
         <div><Icon name="pin" size={16} /> {b.address}{b.city ? `, ${b.city}` : ''}</div>
       </div>
+      {user && <PayOnline key={`${user.phone}:${b.id}`} account={user.phone} booking={b} />}
       {onCancel && CANCELLABLE.includes(b.status) && (
         <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => onCancel(b)}>
           {busy ? 'Cancelling…' : 'Cancel booking'}

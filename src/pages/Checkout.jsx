@@ -204,7 +204,7 @@ export default function Checkout() {
 
         <aside className="sticky">
           <CartSummary ctaLabel={submitting ? 'Booking…' : 'Confirm booking'} onCta={submit} busy={submitting} />
-          <p className="muted small">Pay after service. Cancel free from My bookings before the professional is assigned.</p>
+          <p className="muted small">Manage your booking and payment options from My bookings.</p>
         </aside>
       </div>
     </div>
