@@ -240,7 +240,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .svc-layout, .checkout-layout { grid-template-columns: 1fr; }
   .svc-aside { display: none; }
   .checkout-layout aside { order: -1; position: static; }
-  .checkout-layout aside .cart-card .btn { display: none; }
+  .checkout-layout aside .cart-cta { display: none; }
   .only-mobile { display: flex; }
   .mobile-bar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; justify-content: space-between; align-items: center;
     padding: 12px 20px; background: #fff; border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0,0,0,.06); }

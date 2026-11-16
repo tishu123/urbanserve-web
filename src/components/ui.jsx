@@ -120,15 +120,15 @@ export function Footer() {
 }
 
 /* ---------- Bits ---------- */
-export function QtyControl({ qty, onChange, compact = false }) {
+export function QtyControl({ qty, onChange, compact = false, disabled = false }) {
   if (qty === 0) {
-    return <button className={`btn btn-outline ${compact ? 'btn-sm' : ''}`} onClick={() => onChange(1)}>Add</button>;
+    return <button className={`btn btn-outline ${compact ? 'btn-sm' : ''}`} type="button" disabled={disabled} onClick={() => onChange(1)}>Add</button>;
   }
   return (
     <div className={`qty ${compact ? 'qty-sm' : ''}`}>
-      <button onClick={() => onChange(qty - 1)} aria-label="Decrease">−</button>
+      <button type="button" disabled={disabled} onClick={() => onChange(qty - 1)} aria-label="Decrease">−</button>
       <span>{qty}</span>
-      <button onClick={() => onChange(qty + 1)} aria-label="Increase">+</button>
+      <button type="button" disabled={disabled || qty >= 99} onClick={() => onChange(qty + 1)} aria-label="Increase">+</button>
     </div>
   );
 }
@@ -150,8 +150,11 @@ export function Accordion({ items }) {
   );
 }
 
-export function CartSummary({ ctaLabel = 'Proceed to book', onCta, hideCta = false }) {
-  const { lines, subtotal, setQty } = useStore();
+export function CartSummary({ ctaLabel = 'Proceed to book', onCta, hideCta = false, busy = false }) {
+  const { lines, cartReady, subtotalPaise, reloadPackagePrices, catError, setQty } = useStore();
+  const hasPriceError = lines.some((line) => line.priceStatus === 'error');
+  const hasUnavailable = lines.some((line) => line.priceStatus === 'unavailable');
+
   return (
     <div className="card cart-card">
       <h3>Your cart</h3>
@@ -163,22 +166,43 @@ export function CartSummary({ ctaLabel = 'Proceed to book', onCta, hideCta = fal
       ) : (
         <>
           <ul className="cart-lines">
-            {lines.map((l) => (
-              <li key={`${l.categoryId}-${l.packageId}`}>
+            {lines.map((line) => (
+              <li key={`${line.categoryId}-${line.packageId}`}>
                 <div>
-                  <div className="line-name">{l.pkg.name}</div>
-                  <div className="line-sub">{l.category.name}</div>
+                  <div className="line-name">{line.name}</div>
+                  <div className="line-sub">{line.category?.name}</div>
                 </div>
-                <QtyControl compact qty={l.qty} onChange={(q) => setQty(l.categoryId, l.packageId, q)} />
-                <div className="line-total">{formatINR(l.total)}</div>
+                {line.priceStatus === 'ready' ? (
+                  <QtyControl compact qty={line.qty} disabled={busy}
+                    onChange={(qty) => setQty(line.categoryId, line.packageId, qty)} />
+                ) : (
+                  <button type="button" className="btn btn-ghost btn-sm" disabled={busy}
+                    onClick={() => setQty(line.categoryId, line.packageId, 0)}>
+                    Remove
+                  </button>
+                )}
+                <div className="line-total">
+                  {line.totalPaise != null ? formatINR(line.totalPaise / 100)
+                    : line.priceStatus === 'loading' ? 'Loading…' : 'Unavailable'}
+                </div>
               </li>
             ))}
           </ul>
           <div className="cart-total">
             <span>Total</span>
-            <b>{formatINR(subtotal)}</b>
+            <b>{subtotalPaise == null ? '—' : formatINR(subtotalPaise / 100)}</b>
           </div>
-          {!hideCta && <button className="btn btn-primary btn-block" onClick={onCta}>{ctaLabel}</button>}
+          {hasPriceError && (
+            <div role="alert">
+              <p className="muted small">We couldn’t load all prices. {catError ? 'Refresh the page to try again.' : 'Try reloading prices.'}</p>
+              {!catError && <button type="button" className="btn btn-outline btn-sm" disabled={busy} onClick={reloadPackagePrices}>Reload prices</button>}
+            </div>
+          )}
+          {hasUnavailable && <p className="muted small" role="status">Remove unavailable items to continue.</p>}
+          {!hideCta && (
+            <button type="button" className="btn btn-primary btn-block cart-cta"
+              disabled={busy || !cartReady} onClick={onCta}>{ctaLabel}</button>
+          )}
         </>
       )}
     </div>

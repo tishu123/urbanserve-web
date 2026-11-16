@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, useRouter } from '../router';
 import { useStore } from '../store';
 import { api } from '../api';
-import { contentFor, formatINR, packagePrice } from '../catalog';
+import { contentFor, formatINR } from '../catalog';
 import { Accordion, CartSummary, ErrorBox, Icon, Loading, QtyControl, Stars } from '../components/ui';
 import NotFound from './NotFound';
 
 export default function ServicePage({ slug }) {
-  const { bySlug, loading, catError, city, qtyOf, setQty, itemCount, subtotal } = useStore();
+  const { bySlug, loading, catError, city, qtyOf, setQty, itemCount, subtotalPaise, packageCatalog, reloadPackagePrices } = useStore();
   const { navigate } = useRouter();
   const [pros, setPros] = useState(null);
   const category = bySlug[slug];
@@ -23,8 +23,19 @@ export default function ServicePage({ slug }) {
   if (!category) return <NotFound />;
 
   const ct = contentFor(category);
-  const allPkgs = ct.groups.flatMap((g) => g.packages);
-  const startsAt = Math.min(...allPkgs.map((p) => packagePrice(category, p)));
+  const entry = packageCatalog[category.id];
+  const packages = entry?.packages ?? [];
+  const byCode = new Map(packages.map((pkg) => [pkg.code, pkg]));
+  const displayCodes = new Set(ct.groups.flatMap((group) => group.packages.map((pkg) => pkg.id)));
+  const groups = ct.groups.map((group) => ({
+    ...group,
+    packages: group.packages.filter((pkg) => byCode.has(pkg.id)),
+  })).filter((group) => group.packages.length > 0);
+  const extra = packages.filter((pkg) => !displayCodes.has(pkg.code));
+  if (extra.length) {
+    groups.push({ title: 'Other packages', packages: extra.map((pkg) => ({ id: pkg.code, points: [] })) });
+  }
+  const startsAt = packages.length ? Math.min(...packages.map((pkg) => pkg.unitPaise)) : null;
   const avgRating = pros?.length ? pros.reduce((s, p) => s + p.rating, 0) / pros.length : null;
 
   return (
@@ -45,7 +56,7 @@ export default function ServicePage({ slug }) {
             {pros && <span className="chip"><Icon name="users" size={14} /> {pros.length} verified pro{pros.length === 1 ? '' : 's'} in {city}</span>}
             <span className="chip"><Icon name="shield" size={14} /> 30-day service warranty</span>
           </div>
-          <div className="starts-at">Starts at <b>{formatINR(startsAt)}</b></div>
+          {startsAt != null && <div className="starts-at">Starts at <b>{formatINR(startsAt / 100)}</b></div>}
           <a href="#packages" className="btn btn-primary">View packages</a>
         </div>
         <div className="svc-hero-art" aria-hidden="true">
@@ -67,21 +78,31 @@ export default function ServicePage({ slug }) {
       <div className="container svc-layout">
         <main>
           <section id="packages" className="section-tight">
-            {ct.groups.map((g) => (
+            {!entry && <Loading label="Loading package prices…" />}
+            {entry?.status === 'error' && (
+              <>
+                <ErrorBox message="We couldn’t load package prices." />
+                <button type="button" className="btn btn-outline" onClick={reloadPackagePrices}>Try again</button>
+              </>
+            )}
+            {entry?.status === 'ready' && packages.length === 0 && (
+              <p className="muted">No packages are available for this service right now.</p>
+            )}
+            {groups.map((g) => (
               <div key={g.title} className="pkg-group">
                 <h2>{g.title}</h2>
                 <div className="pkg-list">
                   {g.packages.map((p) => {
-                    const price = packagePrice(category, p);
+                    const pkg = byCode.get(p.id);
                     return (
                       <article key={p.id} className="pkg-card">
                         <div className="pkg-main">
                           <div className="pkg-title">
-                            <h3>{p.name}</h3>
+                            <h3>{pkg.name}</h3>
                             {p.popular && <span className="tag">Most booked</span>}
                           </div>
                           <div className="pkg-meta">
-                            <span><Icon name="clock" size={14} /> {p.duration}</span>
+                            {p.duration && <span><Icon name="clock" size={14} /> {p.duration}</span>}
                             {p.crew && <span><Icon name="users" size={14} /> {p.crew}</span>}
                           </div>
                           <ul className="pkg-points">
@@ -89,7 +110,7 @@ export default function ServicePage({ slug }) {
                           </ul>
                         </div>
                         <div className="pkg-side">
-                          <div className="pkg-price">{formatINR(price)}</div>
+                          <div className="pkg-price">{formatINR(pkg.unitPaise / 100)}</div>
                           <QtyControl qty={qtyOf(category.id, p.id)} onChange={(q) => setQty(category.id, p.id, q)} />
                         </div>
                       </article>
@@ -160,7 +181,7 @@ export default function ServicePage({ slug }) {
 
       {itemCount > 0 && (
         <div className="mobile-bar">
-          <div><b>{formatINR(subtotal)}</b><span>{itemCount} item{itemCount > 1 ? 's' : ''}</span></div>
+          <div><b>{subtotalPaise == null ? 'Check cart' : formatINR(subtotalPaise / 100)}</b><span>{itemCount} item{itemCount > 1 ? 's' : ''}</span></div>
           <button className="btn btn-primary" onClick={() => navigate('/checkout')}>View cart</button>
         </div>
       )}

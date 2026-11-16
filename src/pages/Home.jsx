@@ -6,7 +6,7 @@ import { contentFor, formatINR, slugify } from '../catalog';
 import { ErrorBox, Icon, Loading, Stars } from '../components/ui';
 
 export default function Home() {
-  const { categories, catError, loading, city } = useStore();
+  const { categories, catError, loading, city, packageCatalog } = useStore();
   const [pros, setPros] = useState([]);
 
   useEffect(() => {
@@ -26,11 +26,13 @@ export default function Home() {
           <div className="cat-grid">
             {categories.map((c) => {
               const ct = contentFor(c);
+              const packages = packageCatalog[c.id]?.packages ?? [];
+              const startsAt = packages.length ? Math.min(...packages.map((p) => p.unitPaise)) : null;
               return (
                 <Link key={c.id} to={`/services/${slugify(c.name)}`} className="cat-tile" style={{ '--accent': ct.accent }}>
                   <span className="cat-icon"><Icon name={ct.icon} size={28} /></span>
                   <span className="cat-name">{c.name}</span>
-                  <span className="cat-price">from {formatINR(c.basePrice)}</span>
+                  {startsAt != null && <span className="cat-price">from {formatINR(startsAt / 100)}</span>}
                 </Link>
               );
             })}

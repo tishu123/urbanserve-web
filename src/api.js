@@ -67,6 +67,8 @@ export const api = {
 
   categories: () => request('/api/categories'),
 
+  packages: (categoryId) => request(`/api/categories/${categoryId}/packages`),
+
   providers: ({ categoryId, city } = {}) => {
     const q = new URLSearchParams();
     if (categoryId != null) q.set('categoryId', categoryId);
@@ -74,7 +76,7 @@ export const api = {
     return request(`/api/providers?${q}`);
   },
 
-  /** body: { customerName, address, scheduledAt: 'YYYY-MM-DDTHH:mm:ss', categoryId, providerId? } (phone comes from the token) */
+  /** body: { customerName, address, scheduledAt: 'YYYY-MM-DDTHH:mm:ss', categoryId, providerId?, items: [{ packageCode, quantity }] } (phone comes from the token) */
   createBooking: (body) => request('/api/bookings', { method: 'POST', body: JSON.stringify(body) }),
 
   booking: (id) => request(`/api/bookings/${id}`),
