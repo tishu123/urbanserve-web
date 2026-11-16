@@ -89,6 +89,9 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ razorpayPaymentId, razorpaySignature }),
     }),
+  paymentStatus: (id) =>
+    request(`/api/bookings/${id}/payment/status`, { cache: 'no-store' }),
+
 
   myBookings: () => request('/api/bookings'),
 
